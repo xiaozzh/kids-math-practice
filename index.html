@@ -238,6 +238,7 @@
   <div class="tools">
     <button class="tool-btn" id="micBtn">🎤 重新听</button>
     <button class="tool-btn" id="keypadBtn">🔢 数字答题</button>
+    <button class="tool-btn" id="autoBtn">⚡ 自动切题：关</button>
     <button class="tool-btn" id="endBtn">🏁 结束答题</button>
   </div>
   <div id="keypad"></div>
@@ -266,6 +267,9 @@
 var TOTAL = 80;                 // 总题数
 var CN = { "零":0, "〇":0, "一":1, "二":2, "两":2, "三":3, "四":4,
            "五":5, "六":6, "七":7, "八":8, "九":9 };
+// 同音/近音字映射：识别器常把数字写成同音字，不映射就会漏答
+var HOMO = { "幺":1, "俩":2, "久":9, "酒":9, "玖":9,
+             "时":10, "拾":10, "食":10, "石":10, "实":10, "什":10 };
 
 /* ================= 状态 ================= */
 var questions = [], idx = 0, userAns = [];
@@ -274,6 +278,8 @@ var curAns = null;        // 当前题已记录的答案（null = 还没答）
 var running = false, finished = false;
 var recog = null, micOK = true, listening = false;
 var keyBuf = "";
+var autoNext = false;      // 自动切题开关
+var autoTimer = null;      // 自动切题定时器
 
 function $(id) { return document.getElementById(id); }
 
@@ -306,7 +312,7 @@ function fmt(sec) {
   return (m < 10 ? "0" + m : m) + ":" + (s < 10 ? "0" + s : s);
 }
 
-// 把语音识别出的文字解析成数字（支持 "8"、"八"、"答案是三" 等）
+// 把语音识别出的文字解析成数字（支持 "8"、"八"、"答案是三" 等及常见同音字）
 function parseAnswer(text) {
   if (!text) return null;
   text = String(text).replace(/\s/g, "");
@@ -318,8 +324,11 @@ function parseAnswer(text) {
     return parseInt(digits, 10);
   }
   if (text.indexOf("十") >= 0) return 10; // 答案最大是 10
-  for (var i = 0; i < text.length; i++) {
-    if (CN[text[i]] !== undefined) return CN[text[i]];
+  var i, ch;
+  for (i = 0; i < text.length; i++) {
+    ch = text[i];
+    if (CN[ch] !== undefined) return CN[ch];
+    if (HOMO[ch] !== undefined) return HOMO[ch];
   }
   return null;
 }
@@ -341,24 +350,25 @@ function initSpeech() {
 
   recog.onresult = function (e) {
     if (!running || finished) return;
-    // 只处理最新的一条结果（interim 或 final 都要，实时解析）
-    var res = e.results[e.results.length - 1];
-    var best = res[0], heard = best.transcript, num = parseAnswer(heard), i;
-    for (i = 1; i < res.length && num === null; i++) {
-      num = parseAnswer(res[i].transcript);
-      if (num !== null) heard = res[i].transcript;
-    }
-    if (num !== null) {
-      recordAnswer(num, heard);
-      if (res.isFinal) {
-        // 这一句说完了：重启识别器，保证后面再说的话（改口/下一题）也能被听到
-        restartListen();
+    // 遍历本次事件的所有新结果（不只最后一条），最大限度不漏话
+    var r, res, heard, num, k;
+    for (r = e.resultIndex; r < e.results.length; r++) {
+      res = e.results[r];
+      heard = res[0].transcript;
+      num = parseAnswer(heard);
+      for (k = 1; k < res.length && num === null; k++) {
+        num = parseAnswer(res[k].transcript);
+        if (num !== null) heard = res[k].transcript;
       }
-    } else if (res.isFinal) {
-      // 整句说完了还没听到数字
-      $("heard").textContent = "没听到数字，再说一次～";
-      restartListen();
+      if (num !== null) {
+        recordAnswer(num, heard);
+      } else if (res.isFinal) {
+        $("heard").textContent = "没听到数字，再说一次～";
+      }
     }
+    // 说完一句就重启识别器，清掉旧句子状态，保证后面说的每句都能被听到
+    var last = e.results[e.results.length - 1];
+    if (last.isFinal) restartListen();
   };
   recog.onend = function () {
     listening = false;
@@ -427,7 +437,7 @@ function restartListen() {
   listening = false;
   setTimeout(function () {
     if (running && !finished && !listening) startListen();
-  }, 120);
+  }, 80); // 间隙尽量短，减少漏听
 }
 
 /* ================= 答题流程（记录模式：只记录不判分） ================= */
@@ -459,6 +469,7 @@ function showQuestion() {
   var q = questions[idx];
   curAns = null;
   keyBuf = "";
+  if (autoTimer) clearTimeout(autoTimer);
   $("qText").textContent = q.a + " " + q.op + " " + q.b + " = ?";
   $("progress").textContent = "第 " + (idx + 1) + " / " + TOTAL + " 题";
   $("bar").style.width = (idx / TOTAL * 100) + "%";
@@ -478,13 +489,22 @@ function showQuestion() {
 function recordAnswer(n, heard) {
   if (!running || finished) return;
   curAns = n;
+  // 自动切题：识别到答案后稍等片刻（可改口），没人改口就自动进下一题
+  if (autoTimer) clearTimeout(autoTimer);
+  if (autoNext) {
+    autoTimer = setTimeout(function () {
+      if (running && !finished && curAns === n) nextQuestion();
+    }, 900);
+  }
   var badge = $("badge");
   $("badgeNum").textContent = n;
   badge.classList.remove("pop");
   void badge.offsetWidth; // 重置动画
   badge.classList.add("show", "pop");
   $("heard").textContent = heard ? "听到：“" + heard + "”" : "";
-  $("micStatus").textContent = "🎤 已记录 " + n + "，滑动切下一题（说新数字可改）";
+  $("micStatus").textContent = autoNext
+    ? "🎤 已记录 " + n + "，马上自动下一题（说新数字可改）"
+    : "🎤 已记录 " + n + "，滑动切下一题（说新数字可改）";
   var hint = $("swipeHint");
   hint.classList.add("recorded");
   hint.textContent = idx === TOTAL - 1
@@ -505,6 +525,7 @@ function nextQuestion() {
 function finishQuiz() {
   running = false; finished = true;
   stopListen();
+  if (autoTimer) clearTimeout(autoTimer);
   if (timerId) clearInterval(timerId);
   var usedSec = Math.floor((Date.now() - startTime) / 1000);
 
@@ -631,6 +652,21 @@ $("micBtn").addEventListener("click", function () {
 });
 $("keypadBtn").addEventListener("click", function () {
   $("keypad").classList.toggle("open");
+});
+$("autoBtn").addEventListener("click", function () {
+  autoNext = !autoNext;
+  this.textContent = "⚡ 自动切题：" + (autoNext ? "开" : "关");
+  this.style.background = autoNext ? "#eafff0" : "#ffffffcc";
+  this.style.color = autoNext ? "#2a9d4a" : "#556";
+  if (autoNext && curAns !== null && running && !finished) {
+    // 开启时如果当前题已有答案，也开始倒计时
+    var n = curAns;
+    if (autoTimer) clearTimeout(autoTimer);
+    autoTimer = setTimeout(function () {
+      if (running && !finished && curAns === n) nextQuestion();
+    }, 900);
+  }
+  if (!autoNext && autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
 });
 
 // iOS 下麦克风按钮文案改为「点击说话」
