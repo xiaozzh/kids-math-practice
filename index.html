@@ -346,10 +346,29 @@ function initSpeech() {
       }, 400);
     }
   };
+  var noSpeechCount = 0;
   recog.onerror = function (e) {
-    if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+    var msg = {
+      "not-allowed": "🎤 麦克风权限被拒绝：请点击地址栏左侧的🔒图标，把麦克风设为「允许」后刷新页面",
+      "service-not-allowed": "🎤 浏览器不允许使用语音服务：请换 Chrome 或 Edge 打开",
+      "audio-capture": "🎤 找不到麦克风：请检查麦克风是否插好、Windows 设置里是否允许应用使用麦克风",
+      "network": "🎤 语音服务网络错误：请检查网络后点「重新听」",
+      "language-not-supported": "🎤 不支持中文语音：请换 Chrome 或 Edge 打开",
+      "aborted": ""
+    }[e.error];
+    if (e.error === "not-allowed" || e.error === "service-not-allowed" ||
+        e.error === "audio-capture" || e.error === "language-not-supported") {
       micOK = false;
-      $("micStatus").textContent = "🎤 麦克风不可用，请点「数字答题」";
+      $("micStatus").textContent = msg || "🎤 麦克风不可用，请点「数字答题」";
+      $("heard").textContent = "";
+    } else if (e.error === "no-speech") {
+      noSpeechCount++;
+      if (noSpeechCount >= 5) {
+        noSpeechCount = 0;
+        $("micStatus").textContent = "🎤 听不到声音，请靠近麦克风大声说，或点「数字答题」";
+      }
+    } else if (msg) {
+      $("micStatus").textContent = msg;
     }
   };
 }
@@ -552,9 +571,30 @@ $("keypadBtn").addEventListener("click", function () {
 
 /* ================= 启动 ================= */
 initSpeech();
-if (!micOK) {
-  $("micStatus") && ($("micStatus").textContent = "🎤 当前浏览器不支持语音，可用数字答题");
-}
+(function envCheck() {
+  var warn = "";
+  var inFrame = false;
+  try { inFrame = (window.self !== window.top); } catch (e) { inFrame = true; }
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  var insecure = location.protocol === "http:" &&
+    location.hostname !== "localhost" && location.hostname !== "127.0.0.1";
+
+  if (!SR) {
+    warn = "⚠️ 当前浏览器不支持语音识别，请用 Chrome 或 Edge 打开（可先用「数字答题」）";
+  } else if (inFrame) {
+    warn = "⚠️ 当前处于内嵌预览窗口，麦克风通常被禁用。请点右上角在新标签页打开本页再测语音";
+  } else if (insecure) {
+    warn = "⚠️ 语音识别需要 HTTPS 或本地环境，当前地址不支持。请用 GitHub Pages 网址访问";
+  }
+  if (warn) {
+    var el = document.createElement("div");
+    el.style.cssText = "color:#e05a4e;font-size:13px;background:#fff0f0;" +
+      "padding:8px 14px;border-radius:10px;text-align:center;line-height:1.6;";
+    el.textContent = warn;
+    var note = document.querySelector(".browser-note");
+    note.parentNode.insertBefore(el, note);
+  }
+})();
 </script>
 </body>
 </html>
