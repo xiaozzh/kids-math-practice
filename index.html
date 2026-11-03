@@ -55,10 +55,20 @@
     transition: transform .15s;
   }
   .big-btn:active { transform: scale(.95); }
-  .browser-note { font-size: 12px; color: #9aa7b4; }
+  .ghost-btn {
+    border: none;
+    background: #ffffffcc;
+    color: #556;
+    font-size: 16px;
+    padding: 12px 40px;
+    border-radius: 999px;
+    margin-top: 14px;
+    cursor: pointer;
+  }
+  .browser-note { font-size: 12px; color: #9aa7b4; line-height: 1.7; }
 
   /* ---------- 答题页 ---------- */
-  #quizScreen { touch-action: none; user-select: none; }
+  #quizScreen { user-select: none; }
   .topbar { display: flex; justify-content: space-between; align-items: center; font-size: 15px; color: #556; font-weight: bold; }
   .progressbar { height: 10px; background: #ffffffaa; border-radius: 999px; margin: 10px 0 4px; overflow: hidden; }
   .progressbar > div { height: 100%; width: 0%; background: linear-gradient(90deg, #6ddc7a, #3fbf5a); border-radius: 999px; transition: width .3s; }
@@ -74,56 +84,51 @@
     align-items: center;
     justify-content: center;
     gap: 16px;
-    position: relative;
   }
   .question { font-size: 88px; font-weight: bold; color: #334; letter-spacing: 6px; }
 
-  /* 已记录答案的徽标 */
-  .badge {
-    min-height: 56px;
+  /* 收录成功反馈：纯绿色大对勾，淡入，无框无缩放 */
+  .check {
+    min-height: 64px;
     display: flex;
     align-items: center;
-    gap: 10px;
-    background: #eafff0;
-    border: 2px solid #6ddc7a;
-    border-radius: 999px;
-    padding: 8px 26px;
-    font-size: 26px;
-    font-weight: bold;
+    justify-content: center;
+    font-size: 54px;
     color: #2a9d4a;
     opacity: 0;
-    transform: scale(.8);
-    transition: all .18s;
+    transition: opacity .15s;
   }
-  .badge.show { opacity: 1; transform: scale(1); }
-  .badge.pop { animation: pop .25s; }
-  @keyframes pop {
-    0% { transform: scale(.8); }
-    60% { transform: scale(1.12); }
-    100% { transform: scale(1); }
-  }
+  .check.show { opacity: 1; }
 
   .mic-area { text-align: center; }
-  #micStatus { font-size: 18px; color: #ff8a3d; font-weight: bold; }
+  #micStatus { font-size: 18px; color: #ff8a3d; font-weight: bold; line-height: 1.5; }
   #heard { font-size: 15px; color: #7a8a99; margin-top: 6px; min-height: 22px; max-width: 90vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-  .swipe-hint {
-    text-align: center;
-    padding: 12px 0 4px;
-    font-size: 15px;
-    color: #9aa7b4;
+  .swipe-hint { text-align: center; padding: 10px 0 6px; font-size: 14px; color: #9aa7b4; }
+  .swipe-hint.recorded { color: #3fbf5a; font-weight: bold; }
+
+  /* 下一题大按钮 */
+  .next-btn {
+    border: none;
+    background: linear-gradient(135deg, #6ddc7a, #3fbf5a);
+    color: #fff;
+    font-size: 21px;
+    font-weight: bold;
+    padding: 14px 0;
+    width: 100%;
+    border-radius: 999px;
+    box-shadow: 0 5px 16px rgba(63, 191, 90, .35);
+    cursor: pointer;
+    margin-bottom: 10px;
   }
-  .swipe-hint.recorded { color: #3fbf5a; font-weight: bold; animation: pulse 1.2s infinite; }
-  @keyframes pulse {
-    0%,100% { opacity: 1; }
-    50% { opacity: .5; }
-  }
-  .tools { display: flex; justify-content: center; gap: 12px; padding: 8px 0; }
+  .next-btn:active { transform: scale(.97); }
+
+  .tools { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; padding: 4px 0; }
   .tool-btn {
     border: none;
     background: #ffffffcc;
     border-radius: 999px;
-    padding: 10px 22px;
+    padding: 10px 20px;
     font-size: 15px;
     color: #556;
     box-shadow: 0 3px 10px rgba(0,0,0,.06);
@@ -137,25 +142,32 @@
   }
   #endBtn.confirming { background: #ffe3c9; color: #e05a4e; font-weight: bold; }
 
+  /* 数字键盘：6 列，键盘打开时配合压缩布局保证小屏完整显示 */
   #keypad {
     display: none;
     grid-template-columns: repeat(6, 1fr);
     gap: 8px;
-    padding: 10px 0 4px;
+    padding: 8px 0 12px;
   }
   #keypad.open { display: grid; }
   #keypad button {
     border: none;
     background: #fff;
-    border-radius: 14px;
-    padding: 14px 0;
-    font-size: 22px;
+    border-radius: 12px;
+    padding: 16px 0;
+    font-size: 26px;
     font-weight: bold;
     color: #334;
     box-shadow: 0 3px 8px rgba(0,0,0,.08);
     cursor: pointer;
   }
   #keypad button:active { background: #ffe3c9; }
+
+  /* 键盘打开时压缩题目卡片：算式和绿勾缩小、隐藏语音提示区，把屏幕让给键盘 */
+  .card.shrink { gap: 8px; padding: 12px 10px; justify-content: center; }
+  .card.shrink .question { font-size: 46px; letter-spacing: 3px; }
+  .card.shrink .check { min-height: 30px; font-size: 30px; }
+  .card.shrink .mic-area { display: none; }
 
   /* ---------- 结果页 ---------- */
   #resultScreen { align-items: center; gap: 14px; }
@@ -179,15 +191,9 @@
     padding: 12px;
     box-shadow: 0 4px 14px rgba(0,0,0,.05);
   }
-  .review h3 { font-size: 14px; color: #7a8a99; margin-bottom: 8px; font-weight: normal; }
+  .review h3 { font-size: 14px; color: #7a8a99; margin-bottom: 8px; font-weight: normal; line-height: 1.6; }
   .review-grid { display: flex; flex-wrap: wrap; gap: 6px; }
-  .review-item {
-    font-size: 14px;
-    padding: 6px 10px;
-    border-radius: 8px;
-    color: #fff;
-    font-weight: bold;
-  }
+  .review-item { font-size: 14px; padding: 6px 10px; border-radius: 8px; color: #fff; font-weight: bold; }
   .review-item.ok { background: #3fbf5a; }
   .review-item.no { background: #f0524a; }
   .review-item.skip { background: #aeb9c4; }
@@ -202,18 +208,22 @@
   <h1>十以内数学速算</h1>
   <div class="subtitle">语音答题 · 共 80 题 · 加减混合</div>
   <button class="big-btn" id="startBtn">🎤 开始答题</button>
-  <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center;">
-    <button class="tool-btn" id="micTestBtn" style="font-size:16px;padding:10px 26px;">🎧 先测一下麦克风</button>
-  </div>
+  <button class="ghost-btn" id="micTestBtn">🎧 先测一下麦克风</button>
   <div id="micTestResult" style="font-size:14px;line-height:1.7;min-height:20px;text-align:center;color:#556;"></div>
+  <div id="bestText" style="font-size:15px;color:#2a9d4a;background:#eafff0;border-radius:999px;padding:8px 24px;"></div>
+
   <div class="tips">
     <b>怎么玩：</b><br>
-    1️⃣ 点击开始，允许使用麦克风<br>
-    2️⃣ 看到算式后，直接<b>说出答案</b>（说完马上说下一题的）<br>
-    3️⃣ 答案被记录后<b>左右滑动屏幕</b>切下一题，全程不用等<br>
-    4️⃣ 80 题做完统一公布用时、正确率 🏆
+    1️⃣ 点开始后允许麦克风权限<br>
+    2️⃣ 看到算式，直接<b>说出答案</b>（边说边识别）<br>
+    3️⃣ 出现 <b>绿色 ✔</b> 表示已收录，点 <b>「下一题」</b>按钮继续<br>
+    4️⃣ 80 题做完统一公布用时和正确率 🏆
   </div>
-  <div class="browser-note">建议使用手机 Chrome / Edge 浏览器打开 · 若麦克风不可用可点击「数字答题」按钮</div>
+  <div class="browser-note">
+    语音识别需要 Chrome / Edge（电脑）或 Safari（iPhone）<br>
+    安卓手机 + 微信内打开无法使用语音，建议安装安卓 App 版或用「数字答题」<br>
+    没听清时可用「数字答题」键盘
+  </div>
 </div>
 
 <!-- 答题页 -->
@@ -226,19 +236,20 @@
 
   <div class="card" id="card">
     <div class="question" id="qText">7 + 3 = ?</div>
-    <div class="badge" id="badge">✅ 已记录：<span id="badgeNum">8</span></div>
+    <div class="check" id="check">✔</div>
     <div class="mic-area">
       <div id="micStatus">🎤 正在听…说出答案即可</div>
       <div id="heard"></div>
     </div>
   </div>
 
-  <div class="swipe-hint" id="swipeHint">👆 说完答案，左右滑动进入下一题（随时可滑）</div>
+  <div class="swipe-hint" id="swipeHint">👆 说出答案后，点「下一题」继续</div>
+
+  <button class="next-btn" id="nextBtn">下一题 ➡</button>
 
   <div class="tools">
     <button class="tool-btn" id="micBtn">🎤 重新听</button>
     <button class="tool-btn" id="keypadBtn">🔢 数字答题</button>
-    <button class="tool-btn" id="autoBtn">⚡ 自动切题：关</button>
     <button class="tool-btn" id="endBtn">🏁 结束答题</button>
   </div>
   <div id="keypad"></div>
@@ -256,7 +267,7 @@
     <div class="stat-row" id="rSkipRow"><span>⏭ 未作答</span><b id="rSkip">0 题</b></div>
   </div>
   <div class="review">
-    <h3>答题回顾（绿=对 · 红=错 · 灰=未作答）</h3>
+    <h3 id="reviewTitle">答题回顾</h3>
     <div class="review-grid" id="reviewGrid"></div>
   </div>
   <button class="big-btn" id="restartBtn">🔁 再来一次</button>
@@ -277,9 +288,11 @@ var startTime = 0, timerId = null;
 var curAns = null;        // 当前题已记录的答案（null = 还没答）
 var running = false, finished = false;
 var recog = null, micOK = true, listening = false;
-var keyBuf = "";
-var autoNext = false;      // 自动切题开关
-var autoTimer = null;      // 自动切题定时器
+var keyBuf = "", keyTimer = null;
+var locked = false, lockTimer = null;  // 收录答案 0.5s 后锁定本题，不再接收语音
+var switchAt = 0;                      // 切题时间戳：切题后短暂忽略语音，防止上一题尾音误录
+var SWITCH_GUARD_MS = 1200;            // 保护期时长
+var testMode = false;                  // 麦克风测试模式
 
 function $(id) { return document.getElementById(id); }
 
@@ -349,7 +362,19 @@ function initSpeech() {
   recog.continuous = !isIOS;     // iOS 只支持单次识别模式
 
   recog.onresult = function (e) {
-    if (!running || finished) return;
+    if (!running || finished || locked) return;
+    // 切题保护期：刚切到新题时到达的语音，多半是上一题的尾音残留，丢弃
+    if (testMode) {
+      var tres = e.results[e.results.length - 1];
+      var tnum = parseAnswer(tres[0].transcript), ti;
+      for (ti = 1; ti < tres.length && tnum === null; ti++) tnum = parseAnswer(tres[ti].transcript);
+      if (tnum !== null) {
+        $("micTestResult").innerHTML = "✅ 麦克风正常！听到你说的数字是 <b>" + tnum + "</b>，可以开始答题了";
+        testMode = false;
+      }
+      return;
+    }
+    if (Date.now() - switchAt < SWITCH_GUARD_MS) return;
     // 遍历本次事件的所有新结果（不只最后一条），最大限度不漏话
     var r, res, heard, num, k;
     for (r = e.resultIndex; r < e.results.length; r++) {
@@ -366,9 +391,6 @@ function initSpeech() {
         $("heard").textContent = "没听到数字，再说一次～";
       }
     }
-    // 说完一句就重启识别器，清掉旧句子状态，保证后面说的每句都能被听到
-    var last = e.results[e.results.length - 1];
-    if (last.isFinal) restartListen();
   };
   recog.onend = function () {
     listening = false;
@@ -423,24 +445,15 @@ function startListen() {
     listening = true;
     netErrCount = 0;
     $("micBtn").classList.remove("pulse");
-    $("micStatus").textContent = isIOS ? "🎤 正在听…说出答案" : "🎤 正在听…说出答案即可";
+    if (!testMode) $("micStatus").textContent = "🎤 正在听…说出答案即可";
   } catch (e) { /* 已经在监听中，忽略 */ }
 }
 function stopListen() {
   if (recog) { try { recog.stop(); } catch (e) {} }
   listening = false;
 }
-// 说完一句后重启识别器，清掉旧句子状态，保证能持续听到新的话
-function restartListen() {
-  if (isIOS || !running || finished || !micOK) return;
-  try { recog.stop(); } catch (e) {}
-  listening = false;
-  setTimeout(function () {
-    if (running && !finished && !listening) startListen();
-  }, 80); // 间隙尽量短，减少漏听
-}
 
-/* ================= 答题流程（记录模式：只记录不判分） ================= */
+/* ================= 答题流程 ================= */
 function startQuiz() {
   questions = genQuestions();
   idx = 0;
@@ -469,47 +482,46 @@ function showQuestion() {
   var q = questions[idx];
   curAns = null;
   keyBuf = "";
-  if (autoTimer) clearTimeout(autoTimer);
+  locked = false;
+  if (lockTimer) clearTimeout(lockTimer);
+  // 切题保护：丢弃这段时间到达的语音（多为上一题尾音）
+  switchAt = Date.now();
+  // 重启识别器：清空引擎里上一题的音频缓冲（iOS 由点按触发，跳过）
+  if (!isIOS && recog && micOK) {
+    try { recog.stop(); } catch (e) {}
+    listening = false;
+    setTimeout(function () {
+      if (running && !finished && !listening) startListen();
+    }, 150);
+  }
   $("qText").textContent = q.a + " " + q.op + " " + q.b + " = ?";
   $("progress").textContent = "第 " + (idx + 1) + " / " + TOTAL + " 题";
   $("bar").style.width = (idx / TOTAL * 100) + "%";
+  // 立即清掉上一题的所有痕迹（不能等监听重启）
   $("heard").textContent = "";
-  var badge = $("badge");
-  badge.classList.remove("show", "pop");
+  $("micStatus").textContent = "🎤 正在听…说出答案即可";
+  $("check").classList.remove("show");
   var hint = $("swipeHint");
   hint.classList.remove("recorded");
   hint.textContent = idx === TOTAL - 1
-    ? "👆 随时滑动查看成绩"
-    : "👆 说完答案，左右滑动进入下一题（随时可滑）";
-  // 滑动切题本身是用户手势，iOS 上也可以借此重启识别
-  startListen();
+    ? "👆 点「下一题」查看成绩"
+    : "👆 说出答案后，点「下一题」继续";
 }
 
-// 记录答案：只记不判，不打断节奏；后说的数字覆盖先说的
+// 记录答案：收录后 0.5 秒锁定本题，期间不再接收新语音，防止误覆盖
 function recordAnswer(n, heard) {
-  if (!running || finished) return;
+  if (!running || finished || locked) return;
   curAns = n;
-  // 自动切题：识别到答案后稍等片刻（可改口），没人改口就自动进下一题
-  if (autoTimer) clearTimeout(autoTimer);
-  if (autoNext) {
-    autoTimer = setTimeout(function () {
-      if (running && !finished && curAns === n) nextQuestion();
-    }, 900);
-  }
-  var badge = $("badge");
-  $("badgeNum").textContent = n;
-  badge.classList.remove("pop");
-  void badge.offsetWidth; // 重置动画
-  badge.classList.add("show", "pop");
+  if (lockTimer) clearTimeout(lockTimer);
+  lockTimer = setTimeout(function () {
+    locked = true;
+  }, 500);
+  $("check").classList.add("show");
   $("heard").textContent = heard ? "听到：“" + heard + "”" : "";
-  $("micStatus").textContent = autoNext
-    ? "🎤 已记录 " + n + "，马上自动下一题（说新数字可改）"
-    : "🎤 已记录 " + n + "，滑动切下一题（说新数字可改）";
+  $("micStatus").textContent = "🎤 已记录 " + n + "，点「下一题」继续";
   var hint = $("swipeHint");
   hint.classList.add("recorded");
-  hint.textContent = idx === TOTAL - 1
-    ? "👉 滑动查看成绩！"
-    : "👉 滑动进入下一题";
+  hint.textContent = idx === TOTAL - 1 ? "👉 点「下一题」查看成绩！" : "👉 点「下一题」继续";
 }
 
 function nextQuestion() {
@@ -519,18 +531,17 @@ function nextQuestion() {
   idx++;
   if (idx >= TOTAL) finishQuiz();
   else showQuestion();
-  // 注意：不停止语音识别，持续监听下一题的答案
 }
 
 function finishQuiz() {
   running = false; finished = true;
   stopListen();
-  if (autoTimer) clearTimeout(autoTimer);
+  if (lockTimer) clearTimeout(lockTimer);
   if (timerId) clearInterval(timerId);
   var usedSec = Math.floor((Date.now() - startTime) / 1000);
 
   // 统一判分：遍历所有记录的答案
-  var correct = 0, skipped = 0, wrong = 0, i;
+  var correct = 0, wrong = 0, skipped = 0, i;
   for (i = 0; i < TOTAL; i++) {
     if (userAns[i] === null) { skipped++; continue; }
     if (userAns[i] === questions[i].ans) correct++;
@@ -561,46 +572,27 @@ function finishQuiz() {
       span.className = "review-item no";
       span.innerHTML = label + "<small>（你答" + userAns[i] + "）</small>";
     }
-    span.title = "第" + (i + 1) + "题";
     grid.appendChild(span);
   }
-  // 回顾标题带上统计
-  var reviewTitle = document.querySelector(".review h3");
-  if (reviewTitle) {
-    reviewTitle.innerHTML = "答题回顾：<span style='color:#3fbf5a'>答对 " + correct +
-      "</span> · <span style='color:#f0524a'>答错 " + wrong +
-      "</span> · <span style='color:#8a97a4'>未答 " + skipped + "</span>";
-  }
+  $("reviewTitle").innerHTML = "答题回顾：<span style='color:#3fbf5a'>答对 " + correct +
+    "</span> · <span style='color:#f0524a'>答错 " + wrong +
+    "</span> · <span style='color:#8a97a4'>未答 " + skipped + "</span>（绿=对 · 红=错 · 灰=未答）";
+
+  // 本地保存最好成绩
+  try {
+    var best = localStorage.getItem("bestRecord");
+    if (best) best = JSON.parse(best);
+    var better = !best || acc > best.acc || (acc === best.acc && usedSec < best.usedSec);
+    if (better) localStorage.setItem("bestRecord",
+      JSON.stringify({ acc: acc, usedSec: usedSec, correct: correct }));
+  } catch (e) {}
 
   $("quizScreen").classList.add("hidden");
   $("resultScreen").classList.remove("hidden");
 }
 
-/* ================= 手势滑动 ================= */
-var touchX = null, touchY = null;
-var quiz = $("quizScreen");
-
-quiz.addEventListener("touchstart", function (e) {
-  touchX = e.touches[0].clientX;
-  touchY = e.touches[0].clientY;
-}, { passive: true });
-
-quiz.addEventListener("touchend", function (e) {
-  if (touchX === null) return;
-  var dx = e.changedTouches[0].clientX - touchX;
-  var dy = e.changedTouches[0].clientY - touchY;
-  touchX = touchY = null;
-  if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) nextQuestion();
-}, { passive: true });
-
-// 鼠标拖动（电脑上测试用）
-var mouseX = null;
-quiz.addEventListener("mousedown", function (e) { mouseX = e.clientX; });
-window.addEventListener("mouseup", function (e) {
-  if (mouseX === null || !running) { mouseX = null; return; }
-  if (Math.abs(e.clientX - mouseX) > 60) nextQuestion();
-  mouseX = null;
-});
+/* ================= 下一题按钮 ================= */
+$("nextBtn").addEventListener("click", function () { nextQuestion(); });
 
 /* ================= 数字键盘（备用输入） ================= */
 (function buildKeypad() {
@@ -617,6 +609,18 @@ window.addEventListener("mouseup", function (e) {
     })(n);
   }
 })();
+
+/* ================= 麦克风测试 ================= */
+$("micTestBtn").addEventListener("click", function () {
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    $("micTestResult").innerHTML = "❌ 这个浏览器<b>不支持</b>语音识别。<br>手机请换 <b>Safari（iPhone）</b> 或 <b>Chrome/Edge（安卓）</b>，微信里打开的不行";
+    return;
+  }
+  testMode = true;
+  $("micTestResult").textContent = "🎤 请对着麦克风说一个数字（比如：八）…";
+  startListen();
+});
 
 /* ================= 键盘输入（电脑测试用） ================= */
 document.addEventListener("keydown", function (e) {
@@ -642,38 +646,23 @@ document.addEventListener("keydown", function (e) {
     nextQuestion();
   }
 });
-var keyTimer = null;
 
 /* ================= 按钮 ================= */
 $("startBtn").addEventListener("click", startQuiz);
 $("restartBtn").addEventListener("click", startQuiz);
 $("micBtn").addEventListener("click", function () {
+  listening = false;
   if (!finished) startListen();
 });
 $("keypadBtn").addEventListener("click", function () {
-  $("keypad").classList.toggle("open");
-});
-$("autoBtn").addEventListener("click", function () {
-  autoNext = !autoNext;
-  this.textContent = "⚡ 自动切题：" + (autoNext ? "开" : "关");
-  this.style.background = autoNext ? "#eafff0" : "#ffffffcc";
-  this.style.color = autoNext ? "#2a9d4a" : "#556";
-  if (autoNext && curAns !== null && running && !finished) {
-    // 开启时如果当前题已有答案，也开始倒计时
-    var n = curAns;
-    if (autoTimer) clearTimeout(autoTimer);
-    autoTimer = setTimeout(function () {
-      if (running && !finished && curAns === n) nextQuestion();
-    }, 900);
-  }
-  if (!autoNext && autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
+  var open = $("keypad").classList.toggle("open");
+  // 键盘打开时压缩题目卡片，保证小屏幕完整放下数字键盘
+  $("card").classList.toggle("shrink", open);
 });
 
 // iOS 下麦克风按钮文案改为「点击说话」
 if (isIOS) {
   $("micBtn").textContent = "🎤 点击说话";
-  var m = $("micStatus");
-  if (m && !running) m.textContent = "🎤 每题先点「点击说话」按钮，再说出答案";
 }
 
 // 结束答题：两步确认，防止误触
@@ -701,45 +690,18 @@ $("endBtn").addEventListener("click", function () {
   }
 });
 
-// 麦克风测试：直接告诉你手机上的语音服务是否可用
-$("micTestBtn").addEventListener("click", function () {
-  var out = $("micTestResult");
-  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) {
-    out.innerHTML = "❌ 这个浏览器<b>不支持</b>语音识别。<br>手机请换 <b>Safari（iPhone）</b> 或 <b>Chrome/Edge（安卓）</b>，微信里打开的不行";
-    return;
-  }
-  var r = new SR();
-  r.lang = "zh-CN";
-  r.interimResults = false;
-  out.textContent = "🎤 请对着麦克风说一句话（比如：你好）…";
-  var done = false;
-  r.onresult = function (e) {
-    done = true;
-    out.innerHTML = "✅ 麦克风正常！听到你说：「" + e.results[0][0].transcript + "」可以开始答题了";
-  };
-  r.onerror = function (e) {
-    done = true;
-    var tips = {
-      "not-allowed": "❌ 麦克风权限被拒绝。请到<b>手机系统设置 → 应用 → 浏览器 → 权限</b>里打开麦克风，再刷新页面",
-      "audio-capture": "❌ 收不到声音。请检查麦克风是否被遮挡/禁用，以及系统权限",
-      "network": "❌ 语音服务连不上。<b>安卓手机在中国大陆网络下，浏览器语音识别依赖的 Google 服务无法访问，这是系统级限制</b>。建议：① 用 iPhone 的 Safari 打开 ② 或答题时用「数字答题」键盘",
-      "service-not-allowed": "❌ 语音服务被浏览器禁止，请换 Chrome/Edge/Safari",
-      "language-not-supported": "❌ 不支持中文识别，请换浏览器"
-    };
-    out.innerHTML = tips[e.error] || ("❌ 语音出错（" + e.error + "），请截图反馈");
-  };
-  r.onend = function () {
-    if (!done) out.innerHTML = "⚠️ 没听到声音。请靠近一点，声音大一点再试";
-  };
-  try { r.start(); } catch (err) {
-    out.textContent = "❌ 无法启动语音识别，请刷新页面重试";
-  }
-});
-
 /* ================= 启动 ================= */
 initSpeech();
-(function envCheck() {
+(function init() {
+  // 最好成绩
+  try {
+    var best = JSON.parse(localStorage.getItem("bestRecord") || "null");
+    if (best) {
+      $("bestText").textContent = "🏆 最好成绩：正确率 " + best.acc + "% · 用时 " + fmt(best.usedSec);
+    }
+  } catch (e) {}
+
+  // 环境自检
   var warn = "";
   var inFrame = false;
   try { inFrame = (window.self !== window.top); } catch (e) { inFrame = true; }
@@ -766,7 +728,7 @@ initSpeech();
 
   if (inAppName) {
     warn = "⚠️ 检测到你正在「" + inAppName + "」内置浏览器中打开，这类浏览器不支持语音识别。" +
-           "请点下方按钮复制链接，然后粘贴到 Safari / Chrome / Edge 中打开";
+           "请点右上角菜单，选择「在浏览器中打开」本页；安卓手机推荐安装 App 版（离线语音）";
   } else if (!SR) {
     warn = isIOS
       ? "⚠️ 当前 iOS 浏览器不支持语音识别（需要 iOS 14.5+ 的 Safari，或新版 Chrome/Edge）。可先用「数字答题」"
@@ -778,32 +740,12 @@ initSpeech();
   }
 
   if (warn) {
-    var box = document.createElement("div");
-    box.style.cssText = "color:#e05a4e;font-size:13px;background:#fff0f0;" +
-      "padding:10px 14px;border-radius:10px;text-align:center;line-height:1.7;";
     var el = document.createElement("div");
+    el.style.cssText = "color:#e05a4e;font-size:13px;background:#fff0f0;" +
+      "padding:10px 14px;border-radius:10px;text-align:center;line-height:1.7;";
     el.textContent = warn;
-    box.appendChild(el);
-    if (inAppName) {
-      var cp = document.createElement("button");
-      cp.textContent = "📋 复制链接";
-      cp.style.cssText = "margin-top:8px;border:none;background:#ff8a3d;color:#fff;" +
-        "font-size:14px;padding:8px 20px;border-radius:999px;cursor:pointer;";
-      cp.onclick = function () {
-        var url = location.href;
-        var done = function () { cp.textContent = "✅ 已复制，去 Safari/Chrome 粘贴打开"; };
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(url).then(done, function () {
-            prompt("请手动复制此链接：", url);
-          });
-        } else {
-          prompt("请手动复制此链接：", url);
-        }
-      };
-      box.appendChild(cp);
-    }
     var note = document.querySelector(".browser-note");
-    note.parentNode.insertBefore(box, note);
+    note.parentNode.insertBefore(el, note);
   }
 })();
 </script>
