@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#fff7e6">
+<title>少儿数学速算 · 语音答题</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    background: linear-gradient(160deg, #fff7e6 0%, #e6f4ff 50%, #f0fff4 100%);
+    color: #333;
+    display: flex;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .screen {
+    width: 100%;
+    max-width: 520px;
+    display: flex;
+    flex-direction: column;
+    padding: 24px 20px;
+    overflow-y: auto;
+  }
+  .hidden { display: none !important; }
+
+  /* ---------- 开始页 ---------- */
+  #startScreen { align-items: center; justify-content: center; text-align: center; gap: 18px; }
+  .logo { font-size: 72px; }
+  h1 { font-size: 30px; color: #ff8a3d; letter-spacing: 2px; }
+  .subtitle { font-size: 16px; color: #7a8a99; }
+  .tips {
+    background: #ffffffcc;
+    border-radius: 16px;
+    padding: 18px 22px;
+    text-align: left;
+    font-size: 15px;
+    line-height: 2;
+    color: #556;
+    box-shadow: 0 4px 16px rgba(0,0,0,.06);
+  }
+  .tips b { color: #ff8a3d; }
+  .big-btn {
+    border: none;
+    background: linear-gradient(135deg, #ffb347, #ff8a3d);
+    color: #fff;
+    font-size: 22px;
+    font-weight: bold;
+    padding: 16px 52px;
+    border-radius: 999px;
+    box-shadow: 0 6px 18px rgba(255,138,61,.4);
+    cursor: pointer;
+    transition: transform .15s;
+  }
+  .big-btn:active { transform: scale(.95); }
+  .browser-note { font-size: 12px; color: #9aa7b4; }
+
+  /* ---------- 答题页 ---------- */
+  #quizScreen { touch-action: none; user-select: none; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; font-size: 15px; color: #556; font-weight: bold; }
+  .progressbar { height: 10px; background: #ffffffaa; border-radius: 999px; margin: 10px 0 4px; overflow: hidden; }
+  .progressbar > div { height: 100%; width: 0%; background: linear-gradient(90deg, #6ddc7a, #3fbf5a); border-radius: 999px; transition: width .3s; }
+
+  .card {
+    flex: 1;
+    background: #fff;
+    border-radius: 28px;
+    margin-top: 14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.08);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .question { font-size: 88px; font-weight: bold; color: #334; letter-spacing: 6px; }
+  .mic-area { text-align: center; }
+  #micStatus { font-size: 18px; color: #ff8a3d; font-weight: bold; }
+  #heard { font-size: 16px; color: #7a8a99; margin-top: 6px; min-height: 22px; }
+
+  .feedback {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: #ffffffe8;
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s;
+  }
+  .feedback.show { opacity: 1; }
+  .feedback .mark { font-size: 90px; }
+  .feedback .detail { font-size: 26px; font-weight: bold; color: #334; }
+  .feedback.right { background: #eafff0e8; }
+  .feedback.wrong { background: #fff0f0e8; }
+  .card.shake { animation: shake .4s; }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-12px); }
+    75% { transform: translateX(12px); }
+  }
+
+  .swipe-hint {
+    text-align: center;
+    padding: 12px 0 4px;
+    font-size: 15px;
+    color: #9aa7b4;
+    transition: all .3s;
+  }
+  .swipe-hint.ready { color: #3fbf5a; font-weight: bold; animation: pulse 1.2s infinite; }
+  @keyframes pulse {
+    0%,100% { opacity: 1; }
+    50% { opacity: .5; }
+  }
+  .tools { display: flex; justify-content: center; gap: 12px; padding: 8px 0; }
+  .tool-btn {
+    border: none;
+    background: #ffffffcc;
+    border-radius: 999px;
+    padding: 10px 22px;
+    font-size: 15px;
+    color: #556;
+    box-shadow: 0 3px 10px rgba(0,0,0,.06);
+    cursor: pointer;
+  }
+  .tool-btn:active { transform: scale(.95); }
+
+  #keypad {
+    display: none;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+    padding: 10px 0 4px;
+  }
+  #keypad.open { display: grid; }
+  #keypad button {
+    border: none;
+    background: #fff;
+    border-radius: 14px;
+    padding: 14px 0;
+    font-size: 22px;
+    font-weight: bold;
+    color: #334;
+    box-shadow: 0 3px 8px rgba(0,0,0,.08);
+    cursor: pointer;
+  }
+  #keypad button:active { background: #ffe3c9; }
+
+  /* ---------- 结果页 ---------- */
+  #resultScreen { align-items: center; gap: 14px; }
+  .result-title { font-size: 34px; color: #ff8a3d; font-weight: bold; margin-top: 10px; }
+  .stars { font-size: 44px; letter-spacing: 6px; }
+  .stats { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+  .stat-row {
+    background: #ffffffcc;
+    border-radius: 16px;
+    padding: 14px 20px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 18px;
+    box-shadow: 0 4px 14px rgba(0,0,0,.05);
+  }
+  .stat-row b { font-size: 22px; }
+  .review {
+    width: 100%;
+    background: #ffffffcc;
+    border-radius: 16px;
+    padding: 12px;
+    box-shadow: 0 4px 14px rgba(0,0,0,.05);
+  }
+  .review h3 { font-size: 15px; color: #7a8a99; margin-bottom: 8px; font-weight: normal; }
+  .review-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+  .review-item {
+    font-size: 13px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    color: #fff;
+  }
+  .review-item.ok { background: #6ddc7a; }
+  .review-item.no { background: #ff8a8a; }
+  .review-item.no::after { content: attr(data-note); font-size: 11px; opacity: .9; }
+</style>
+</head>
+<body>
+
+<!-- 开始页 -->
+<div class="screen" id="startScreen">
+  <div class="logo">🧮</div>
+  <h1>十以内数学速算</h1>
+  <div class="subtitle">语音答题 · 共 80 题 · 加减混合</div>
+  <button class="big-btn" id="startBtn">🎤 开始答题</button>
+  <div class="tips">
+    <b>怎么玩：</b><br>
+    1️⃣ 点击开始，允许使用麦克风<br>
+    2️⃣ 看到算式后，大声<b>说出答案</b><br>
+    3️⃣ 答完后<b>左右滑动屏幕</b>，进入下一题<br>
+    4️⃣ 做完 80 题，查看用时和正确率 🏆
+  </div>
+  <div class="browser-note">建议使用手机 Chrome / Edge 浏览器打开 · 若麦克风不可用可点击「数字答题」按钮</div>
+</div>
+
+<!-- 答题页 -->
+<div class="screen hidden" id="quizScreen">
+  <div class="topbar">
+    <span id="progress">第 1 / 80 题</span>
+    <span>⏱ <span id="timer">00:00</span></span>
+  </div>
+  <div class="progressbar"><div id="bar"></div></div>
+
+  <div class="card" id="card">
+    <div class="question" id="qText">7 + 3 = ?</div>
+    <div class="mic-area">
+      <div id="micStatus">🎤 正在听…大声说出答案</div>
+      <div id="heard"></div>
+    </div>
+    <div class="feedback" id="feedback">
+      <div class="mark" id="fbMark">✅</div>
+      <div class="detail" id="fbDetail"></div>
+    </div>
+  </div>
+
+  <div class="swipe-hint" id="swipeHint">👆 答题后左右滑动进入下一题</div>
+
+  <div class="tools">
+    <button class="tool-btn" id="micBtn">🎤 重新听</button>
+    <button class="tool-btn" id="keypadBtn">🔢 数字答题</button>
+  </div>
+  <div id="keypad"></div>
+</div>
+
+<!-- 结果页 -->
+<div class="screen hidden" id="resultScreen">
+  <div class="logo">🎉</div>
+  <div class="result-title">全部完成！</div>
+  <div class="stars" id="stars">⭐⭐⭐</div>
+  <div class="stats">
+    <div class="stat-row"><span>⏱ 总用时</span><b id="rTime">03:25</b></div>
+    <div class="stat-row"><span>✅ 答对题数</span><b id="rCorrect">72 / 80</b></div>
+    <div class="stat-row"><span>🎯 正确率</span><b id="rAcc">90%</b></div>
+  </div>
+  <div class="review">
+    <h3>答题回顾（绿色正确 / 红色错误）</h3>
+    <div class="review-grid" id="reviewGrid"></div>
+  </div>
+  <button class="big-btn" id="restartBtn">🔁 再来一次</button>
+</div>
+
+<script>
+/* ================= 配置 ================= */
+var TOTAL = 80;                 // 总题数
+var CN = { "零":0, "〇":0, "一":1, "二":2, "两":2, "三":3, "四":4,
+           "五":5, "六":6, "七":7, "八":8, "九":9 };
+
+/* ================= 状态 ================= */
+var questions = [], idx = 0, correct = 0, userAns = [];
+var startTime = 0, timerId = null;
+var answered = false, running = false, finished = false;
+var recog = null, micOK = true;
+var keyBuf = "", keyTimer = null;
+
+function $(id) { return document.getElementById(id); }
+
+/* ================= 出题 ================= */
+function genQuestions() {
+  var q = [], i, a, b;
+  // 40 道加法：两个数都在 10 以内，且和不超过 10
+  for (i = 0; i < TOTAL / 2; i++) {
+    do { a = 1 + Math.floor(Math.random() * 10); b = 1 + Math.floor(Math.random() * 10); }
+    while (a + b > 10);
+    q.push({ a: a, b: b, op: "+", ans: a + b });
+  }
+  // 40 道减法：结果不为负数
+  for (i = 0; i < TOTAL / 2; i++) {
+    a = 1 + Math.floor(Math.random() * 10);
+    b = Math.floor(Math.random() * a);
+    q.push({ a: a, b: b, op: "−", ans: a - b });
+  }
+  // 打乱顺序
+  for (i = q.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = q[i]; q[i] = q[j]; q[j] = t;
+  }
+  return q;
+}
+
+/* ================= 工具 ================= */
+function fmt(sec) {
+  var m = Math.floor(sec / 60), s = sec % 60;
+  return (m < 10 ? "0" + m : m) + ":" + (s < 10 ? "0" + s : s);
+}
+
+// 把语音识别出的文字解析成数字（支持 "8"、"八"、"答案是三" 等）
+function parseAnswer(text) {
+  if (!text) return null;
+  text = String(text).replace(/\s/g, "");
+  var m = text.match(/[0-9０-９]+/);
+  if (m) {
+    var digits = m[0].replace(/[０-９]/g, function (c) {
+      return String.fromCharCode(c.charCodeAt(0) - 65248); // 全角转半角
+    });
+    return parseInt(digits, 10);
+  }
+  if (text.indexOf("十") >= 0) return 10; // 答案最大是 10
+  for (var i = 0; i < text.length; i++) {
+    if (CN[text[i]] !== undefined) return CN[text[i]];
+  }
+  return null;
+}
+
+/* ================= 语音识别 ================= */
+function initSpeech() {
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { micOK = false; return; }
+  recog = new SR();
+  recog.lang = "zh-CN";
+  recog.interimResults = false;
+  recog.maxAlternatives = 5;
+  recog.continuous = false;
+
+  recog.onresult = function (e) {
+    var alts = e.results[0];
+    var heard = alts[0].transcript, num = null, i;
+    for (i = 0; i < alts.length; i++) {
+      num = parseAnswer(alts[i].transcript);
+      if (num !== null) { heard = alts[i].transcript; break; }
+    }
+    if (num !== null) {
+      $("heard").textContent = "听到：“" + heard + "”";
+      submitAnswer(num);
+    } else {
+      $("heard").textContent = "没听清数字，请再说一次～";
+    }
+  };
+  recog.onend = function () {
+    // 没答上就自动继续听
+    if (running && !answered && !finished) {
+      setTimeout(function () {
+        if (running && !answered && !finished) startListen();
+      }, 400);
+    }
+  };
+  recog.onerror = function (e) {
+    if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+      micOK = false;
+      $("micStatus").textContent = "🎤 麦克风不可用，请点「数字答题」";
+    }
+  };
+}
+
+function startListen() {
+  if (!recog || !micOK || !running || answered) return;
+  try {
+    recog.start();
+    $("micStatus").textContent = "🎤 正在听…大声说出答案";
+  } catch (e) { /* 已经在监听中，忽略 */ }
+}
+function stopListen() {
+  if (recog) { try { recog.stop(); } catch (e) {} }
+  $("micStatus").textContent = "🎤 已收到答案";
+}
+
+/* ================= 答题流程 ================= */
+function startQuiz() {
+  questions = genQuestions();
+  idx = 0; correct = 0; userAns = new Array(TOTAL).fill(null);
+  answered = false; running = true; finished = false;
+  keyBuf = "";
+  startTime = Date.now();
+  if (timerId) clearInterval(timerId);
+  timerId = setInterval(function () {
+    $("timer").textContent = fmt(Math.floor((Date.now() - startTime) / 1000));
+  }, 500);
+
+  $("startScreen").classList.add("hidden");
+  $("resultScreen").classList.add("hidden");
+  $("quizScreen").classList.remove("hidden");
+  showQuestion();
+  startListen(); // 在按钮点击事件里触发，便于申请麦克风权限
+}
+
+function showQuestion() {
+  var q = questions[idx];
+  answered = false;
+  keyBuf = "";
+  $("qText").textContent = q.a + " " + q.op + " " + q.b + " = ?";
+  $("progress").textContent = "第 " + (idx + 1) + " / " + TOTAL + " 题";
+  $("bar").style.width = (idx / TOTAL * 100) + "%";
+  $("heard").textContent = "";
+  $("feedback").classList.remove("show", "right", "wrong");
+  var hint = $("swipeHint");
+  hint.classList.remove("ready");
+  hint.textContent = "👆 答题后左右滑动进入下一题";
+  startListen();
+}
+
+function submitAnswer(n) {
+  if (!running || answered) return;
+  answered = true;
+  stopListen();
+  var q = questions[idx];
+  userAns[idx] = n;
+  var ok = (n === q.ans);
+  if (ok) correct++;
+
+  var fb = $("feedback");
+  fb.classList.remove("right", "wrong");
+  if (ok) {
+    fb.classList.add("right");
+    $("fbMark").textContent = "✅";
+    $("fbDetail").textContent = "答对啦！" + q.a + " " + q.op + " " + q.b + " = " + q.ans;
+  } else {
+    fb.classList.add("wrong");
+    $("fbMark").textContent = "❌";
+    $("fbDetail").textContent = "你答 " + n + "，正确答案是 " + q.ans;
+    var card = $("card");
+    card.classList.remove("shake");
+    void card.offsetWidth; // 重置动画
+    card.classList.add("shake");
+  }
+  fb.classList.add("show");
+
+  var hint = $("swipeHint");
+  hint.classList.add("ready");
+  hint.textContent = idx === TOTAL - 1
+    ? "👉 滑动查看成绩！"
+    : "👉 滑动进入下一题";
+}
+
+function nextQuestion() {
+  if (!running) return;
+  if (!answered) {
+    var hint = $("swipeHint");
+    hint.textContent = "先说出这一题的答案哦～";
+    return;
+  }
+  idx++;
+  if (idx >= TOTAL) finishQuiz();
+  else showQuestion();
+}
+
+function finishQuiz() {
+  running = false; finished = true;
+  stopListen();
+  if (timerId) clearInterval(timerId);
+  var usedSec = Math.floor((Date.now() - startTime) / 1000);
+  var acc = Math.round(correct / TOTAL * 100);
+
+  $("rTime").textContent = fmt(usedSec) + "（" + usedSec + " 秒）";
+  $("rCorrect").textContent = correct + " / " + TOTAL;
+  $("rAcc").textContent = acc + "%";
+  $("stars").textContent = acc >= 90 ? "⭐⭐⭐" : acc >= 75 ? "⭐⭐" : acc >= 60 ? "⭐" : "💪";
+
+  var grid = $("reviewGrid");
+  grid.innerHTML = "";
+  for (var i = 0; i < TOTAL; i++) {
+    var q = questions[i], ok = userAns[i] === q.ans;
+    var span = document.createElement("span");
+    span.className = "review-item " + (ok ? "ok" : "no");
+    span.textContent = q.a + q.op + q.b + "=" + q.ans;
+    if (!ok) span.setAttribute("data-note", "（答" + userAns[i] + "）");
+    span.title = "第" + (i + 1) + "题";
+    grid.appendChild(span);
+  }
+
+  $("quizScreen").classList.add("hidden");
+  $("resultScreen").classList.remove("hidden");
+}
+
+/* ================= 手势滑动 ================= */
+var touchX = null, touchY = null;
+var quiz = $("quizScreen");
+
+quiz.addEventListener("touchstart", function (e) {
+  touchX = e.touches[0].clientX;
+  touchY = e.touches[0].clientY;
+}, { passive: true });
+
+quiz.addEventListener("touchend", function (e) {
+  if (touchX === null) return;
+  var dx = e.changedTouches[0].clientX - touchX;
+  var dy = e.changedTouches[0].clientY - touchY;
+  touchX = touchY = null;
+  if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) nextQuestion();
+}, { passive: true });
+
+// 鼠标拖动（电脑上测试用）
+var mouseX = null;
+quiz.addEventListener("mousedown", function (e) { mouseX = e.clientX; });
+window.addEventListener("mouseup", function (e) {
+  if (mouseX === null || !running) { mouseX = null; return; }
+  if (Math.abs(e.clientX - mouseX) > 60) nextQuestion();
+  mouseX = null;
+});
+
+/* ================= 数字键盘（备用输入） ================= */
+(function buildKeypad() {
+  var kp = $("keypad");
+  for (var n = 0; n <= 10; n++) {
+    (function (n) {
+      var btn = document.createElement("button");
+      btn.textContent = n;
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        submitAnswer(n);
+      });
+      kp.appendChild(btn);
+    })(n);
+  }
+})();
+
+/* ================= 键盘输入（电脑测试用） ================= */
+document.addEventListener("keydown", function (e) {
+  if (!running) {
+    if (e.key === "Enter" && !$("startScreen").classList.contains("hidden")) startQuiz();
+    return;
+  }
+  if (e.key >= "0" && e.key <= "9") {
+    keyBuf += e.key;
+    $("heard").textContent = "输入中：" + keyBuf;
+    if (keyTimer) clearTimeout(keyTimer);
+    keyTimer = setTimeout(function () {
+      submitAnswer(parseInt(keyBuf, 10));
+      keyBuf = "";
+    }, 600);
+  } else if (e.key === "Backspace") {
+    keyBuf = keyBuf.slice(0, -1);
+    $("heard").textContent = keyBuf ? "输入中：" + keyBuf : "";
+  } else if (e.key === "Enter") {
+    if (keyBuf) { submitAnswer(parseInt(keyBuf, 10)); keyBuf = ""; }
+    else nextQuestion();
+  } else if (e.key === "ArrowRight") {
+    nextQuestion();
+  }
+});
+
+/* ================= 按钮 ================= */
+$("startBtn").addEventListener("click", startQuiz);
+$("restartBtn").addEventListener("click", startQuiz);
+$("micBtn").addEventListener("click", function () {
+  if (!answered) startListen();
+});
+$("keypadBtn").addEventListener("click", function () {
+  $("keypad").classList.toggle("open");
+});
+
+/* ================= 启动 ================= */
+initSpeech();
+if (!micOK) {
+  $("micStatus") && ($("micStatus").textContent = "🎤 当前浏览器不支持语音，可用数字答题");
+}
+</script>
+</body>
+</html>
