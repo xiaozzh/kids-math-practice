@@ -15,7 +15,9 @@
     display: flex;
     justify-content: center;
     overflow: hidden;
+    touch-action: manipulation; /* iOS 消除点击 300ms 延迟 */
   }
+  button { touch-action: manipulation; }
   .screen {
     width: 100%;
     max-width: 520px;
@@ -212,7 +214,15 @@
   <div id="micTestResult" style="font-size:14px;line-height:1.7;min-height:20px;text-align:center;color:#556;"></div>
   <div id="bestText" style="font-size:15px;color:#2a9d4a;background:#eafff0;border-radius:999px;padding:8px 24px;"></div>
 
-  <div class="tips">
+  <div class="tips" id="tipsIOS" style="display:none;">
+    <b>iPhone / iPad 用法：</b><br>
+    1️⃣ 点开始后允许麦克风权限<br>
+    2️⃣ 看到「🎤 正在听」后<b>直接说出答案</b><br>
+    3️⃣ 绿色 ✔ 出现后，点 <b>「下一题」</b>——点完自动开始收听，接着说下一题答案<br>
+    4️⃣ 80 题做完统一公布成绩 🏆<br>
+    💡 每题都是：说答案 → 点下一题，两步循环
+  </div>
+  <div class="tips" id="tipsNormal">
     <b>怎么玩：</b><br>
     1️⃣ 点开始后允许麦克风权限<br>
     2️⃣ 看到算式，直接<b>说出答案</b>（边说边识别）<br>
@@ -395,9 +405,14 @@ function initSpeech() {
   recog.onend = function () {
     listening = false;
     if (!running || finished) return;
+    if (curAns !== null) {
+      // 已收录答案：等点「下一题」，点按钮时会自动重启收音
+      $("micStatus").textContent = "🎤 已记录 " + curAns + "，点「下一题」继续";
+      return;
+    }
     if (isIOS) {
-      // iOS：不能自动重启，提示点击说话
-      $("micStatus").textContent = "🎤 点下方「点击说话」按钮，然后说出答案";
+      // iOS：不能自动重启，提示点击（点「下一题」或「点击说话」均可重启收音）
+      $("micStatus").textContent = "🎤 没听到？再说一次，或点「下一题」跳过";
       $("micBtn").classList.add("pulse");
     } else if (micOK) {
       // 安卓/电脑：自动继续听（部分浏览器会自动断开）
@@ -486,13 +501,26 @@ function showQuestion() {
   if (lockTimer) clearTimeout(lockTimer);
   // 切题保护：丢弃这段时间到达的语音（多为上一题尾音）
   switchAt = Date.now();
-  // 重启识别器：清空引擎里上一题的音频缓冲（iOS 由点按触发，跳过）
-  if (!isIOS && recog && micOK) {
-    try { recog.stop(); } catch (e) {}
-    listening = false;
-    setTimeout(function () {
-      if (running && !finished && !listening) startListen();
-    }, 150);
+  if (recog && micOK) {
+    if (isIOS) {
+      // iOS 关键优化：每次识别必须由用户点击触发。
+      // 点「下一题」正是用户手势 → 在这里【同步】重启收音（不能放进 setTimeout），
+      // 孩子点完按钮直接说答案，无需再点麦克风
+      listening = false;
+      try { recog.stop(); } catch (e) {}
+      try {
+        recog.start();
+        listening = true;
+        $("micStatus").textContent = "🎤 正在听…说出答案";
+      } catch (e) { /* 会话仍在进行，会继续收音 */ }
+    } else {
+      // 安卓/电脑：重启识别器清空上一题的音频缓冲
+      try { recog.stop(); } catch (e) {}
+      listening = false;
+      setTimeout(function () {
+        if (running && !finished && !listening) startListen();
+      }, 150);
+    }
   }
   $("qText").textContent = q.a + " " + q.op + " " + q.b + " = ?";
   $("progress").textContent = "第 " + (idx + 1) + " / " + TOTAL + " 题";
@@ -516,6 +544,11 @@ function recordAnswer(n, heard) {
   lockTimer = setTimeout(function () {
     locked = true;
   }, 500);
+  // iOS：收录后主动结束本段识别（点「下一题」时会自动重启收音）
+  if (isIOS && recog) {
+    try { recog.stop(); } catch (e) {}
+    listening = false;
+  }
   $("check").classList.add("show");
   $("heard").textContent = heard ? "听到：“" + heard + "”" : "";
   $("micStatus").textContent = "🎤 已记录 " + n + "，点「下一题」继续";
@@ -660,9 +693,11 @@ $("keypadBtn").addEventListener("click", function () {
   $("card").classList.toggle("shrink", open);
 });
 
-// iOS 下麦克风按钮文案改为「点击说话」
+// iOS 下麦克风按钮文案改为「点击说话」，并切换 iOS 专属玩法说明
 if (isIOS) {
   $("micBtn").textContent = "🎤 点击说话";
+  $("tipsIOS").style.display = "block";
+  $("tipsNormal").style.display = "none";
 }
 
 // 结束答题：两步确认，防止误触
